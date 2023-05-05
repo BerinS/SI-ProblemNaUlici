@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Objavi Problem</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="formStyle.css">
+
+  <style>
+    img{
+      height: 345px;
+      width: 432px;
+      border: 3px solid black;
+    }
+    .btn-primary{
+        display: inline-block;
+        margin: 5px;
+    }
+    .form-control{
+        width: 30%;
+        display: inline;
+    }
+    .problemDesc{
+        width: fit-content;
+    }
+    .inputArea{
+        display: inline-block;
+    }
+    .imageButtons{
+        display: inline-block;
+    }
+  </style>
+</head>
+<body>
+    <!-- Page Navbar  -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+
+            <div class="d-flex flex-row">
+                <h3>Belaj na Cesti</h3>
+            </div>
+
+            <!-- Hamburger menu button  -->
+            <button class="btn btn-dark d-inline-block d-lg-none ml-auto" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fas fa-align-justify"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="nav navbar-nav ml-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">Kontakt</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">O Nama</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">FAQ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-person-circle"></i> Vaš profil</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="text-align: center;">       
+        <label>Naslov: </label>
+        <input type="text" id="namebox" class="form-control">
+        <label id="extlab"></label>
+        <br>
+        <br>
+                   
+        <img id="myimg">
+        <br>
+        <label id="upprogress">%</label>
+        <br>
+        
+        <div class="imageButtons">
+            <button id="selbtn" type="button" class="btn btn-primary">Select Image</button>
+            <button id="upbtn" type="button" class="btn btn-primary">Upload Image</button>
+            <button id="downbtn" type="button" class="btn btn-primary">Download Image</button>
+        </div>    
+        <br><br>    
+        <div class="problemDescField">
+            <br>
+            <h4>Opis problema: </h4>
+            <textarea class="form-control" id="problemDesc" rows="5"></textarea>
+        </div>
+        <br>
+        <button type="submit" id="submit-button" class="btn btn-primary">Submit</button>
+    </div>
+  
+
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    
+    // Import the functions for Firebase Storage
+    import {getStorage, ref as sRef, uploadBytesResumable, getDownloadURL} 
+    from "https://www.gstatic.com/firebasejs/9.21.0/firebase-storage.js";
+    
+    
+    const firebaseConfig = {
+        apiKey: "AIzaSyBt_GLwFnZQbTOkHboXUUDtUNS3x09Q-z8",
+        authDomain: "imageuploadtest-eb0cd.firebaseapp.com",
+        databaseURL: "https://imageuploadtest-eb0cd-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "imageuploadtest-eb0cd",
+        storageBucket: "imageuploadtest-eb0cd.appspot.com",
+        messagingSenderId: "651331558880",
+        appId: "1:651331558880:web:44b6b12a8db11ecb4ddf85"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+
+    // Import the functions for Firebase Realtime Database
+    import {getDatabase, set, get, update, remove, ref, child}
+    from "https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js";
+
+    const db = getDatabase(app);
+
+    
+    var files = [];
+    var reader = new FileReader();
+
+    var namebox = document.getElementById(`namebox`);
+    var extlab = document.getElementById(`extlab`);
+    var myimg = document.getElementById(`myimg`);
+    var proglab = document.getElementById(`upprogress`);
+    var SelBtn = document.getElementById(`selbtn`);
+    var UpBtn = document.getElementById(`upbtn`);
+    var DownpBtn = document.getElementById(`downbtn`);
+    var SubmitBtn = document.getElementById(`submit-button`);
+    var ImgDownoladURL;
+    let counter = 0;
+    
+
+    var input = document.createElement(`input`);
+    input.type = `file`;
+
+    input.onchange = e => {
+      files = e.target.files;
+
+      var extension = GetFileExt(files[0]);
+      var name = GetFileName(files[0]);
+
+      namebox.value = name;
+      extlab.innerHTML = extension;
+
+      reader.readAsDataURL(files[0]);
+    }
+
+    reader.onload = function(){
+      myimg.src = reader.result;
+    }
+
+    SelBtn.onclick = function(){
+      input.click();
+    }
+
+    function GetFileExt(file){
+      var temp = file.name.split(`.`);
+      var ext = temp.slice(temp.length-1, temp.length);
+      return `.` + ext[0];
+    }
+
+    function GetFileName(file){
+      var temp = file.name.split(`.`);
+      var fname = temp.slice(0,-1).join(`.`);
+      return fname;
+    }
+
+    async function UploadProcess(){
+      var ImgToUpload = files[0];
+      var ImgName = namebox.value + extlab.innerHTML;
+
+      const metaData = {
+        contentType: ImgToUpload.type
+      }
+
+      const storage = getStorage();
+
+      const storageRef = sRef(storage, "Images/"+ImgName);
+
+      const UploadTask = uploadBytesResumable(storageRef,ImgToUpload, metaData);
+
+      UploadTask.on(`state-changed`, (snapshot)=>{
+        var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        proglab.innerHTML = `Upload `+ progress + `%`;
+      },
+      (error) =>{
+        alert("Error: Image not uploaded");
+      },
+      ()=>{
+        getDownloadURL(UploadTask.snapshot.ref).then((downloadURL) =>{
+          console.log(downloadURL);
+          ImgDownoladURL = downloadURL;
+        });
+      }
+      
+      );
+    }
+
+    UpBtn.onclick = UploadProcess;
+
+    function insert(){
+        //insert data into database
+        let title = document.getElementById("namebox").value;
+        let description = document.getElementById("problemDesc").value;
+        let imgURL = ImgDownoladURL;        
+        counter += 1;
+
+        set(ref(db, `Report Data`), {          
+          Title: title,
+          Description: description,
+          Image_URL: imgURL     
+        })
+        .then( ()=>{
+          alert("Data added successfully!")
+        })
+        .catch( (error)=>{
+          alert(error)
+        })
+        
+      }
+
+      SubmitBtn.onclick = insert;
+
+  </script>
+
+  
+</body>
+</html>
